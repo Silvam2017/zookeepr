@@ -6,6 +6,19 @@ const PORT = process.env.PORT || 3001;
 
 const app = express();
 
+const fs = require('fs');
+
+const path = require('path');
+
+// parse incoming string or array data. urlencoded extended true takes incoming POST data and converts it to key/value pairings that can be accessed in the req.body object. Extended:true refers to the fact that it may have sub-array data ie: extending a class.
+app.use(express.urlencoded({ extended: true }));
+// parse incoming JSON data. Takes incoming POST data in form of JSON and parses it into the req.body JS object.
+app.use(express.json());
+
+// +++++++++++++++++++++ IMPORTANT +++++++++++++++++++++
+
+//Need both of these every time you create a server that's looking to accept POST data.
+
 function filterByQuery(query, animalsArray) {
     let personalityTraitsArray = [];
     // Note that we save the animalsArray as filteredResults here:
@@ -49,6 +62,33 @@ function filterByQuery(query, animalsArray) {
     const result = animalsArray.filter(animal => animal.id === id)[0];
     return result;
   }
+
+  function createNewAnimal(body, animalsArray) {
+    const animal = body;
+    animalsArray.push(animal);
+    fs.writeFileSync(
+      path.join(__dirname, './data/animals.json'),
+      // null = we don't want to edit any of our existing data, or else we could pass something in there. 2 =  create white space in between our values to make it more readable.
+      JSON.stringify({ animals: animalsArray }, null, 2)
+    );
+    return animal;
+  }
+
+  function validateAnimal(animal) {
+    if (!animal.name || typeof animal.name !== 'string') {
+      return false;
+    }
+    if (!animal.species || typeof animal.species !== 'string') {
+      return false;
+    }
+    if (!animal.diet || typeof animal.diet !== 'string') {
+      return false;
+    }
+    if (!animal.personalityTraits || !Array.isArray(animal.personalityTraits)) {
+      return false;
+    }
+    return true;
+  }
   
 //get requires a string that describes the route the client will have to fetch from, and a callback fuction that will execute every time that route is accessed with a GET request.
 app.get('/api/animals', (req, res) => {
@@ -66,6 +106,20 @@ app.get('/api/animals', (req, res) => {
       res.json(result);
     } else {
       res.send(404);
+    }
+  });
+
+  //defined a route that listens for POST requests, not GET requests.
+  app.post('/api/animals', (req, res) => {
+    // set id based on what the next index of the array will be
+    req.body.id = animals.length.toString();
+  
+    // if any data in req.body is incorrect, send 400 error back
+    if (!validateAnimal(req.body)) {
+      res.status(400).send('The animal is not properly formatted.');
+    } else {
+      const animal = createNewAnimal(req.body, animals);
+      res.json(animal);
     }
   });
 
