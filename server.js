@@ -19,6 +19,9 @@ app.use(express.json());
 
 //Need both of these every time you create a server that's looking to accept POST data.
 
+// provides file path (public folder) and instructs server to make these files static resources. MIDDLEWARE
+app.use(express.static('public'));
+
 function filterByQuery(query, animalsArray) {
     let personalityTraitsArray = [];
     // Note that we save the animalsArray as filteredResults here:
@@ -123,6 +126,21 @@ app.get('/api/animals', (req, res) => {
     }
   });
 
+  //sends index.html file to user. MIDDLEWARE
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/index.html'));
+  });
+
+  app.get('/animals', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/animals.html'));
+  });
+
+  app.get('/zookeepers', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/zookeepers.html'));
+  });
+
+  //-=-=-=-=-=-=-=-=-=-=-=
+  //Should always be last
 app.listen(PORT, () => {
     console.log(`API server now on port ${PORT}!`);
   });
